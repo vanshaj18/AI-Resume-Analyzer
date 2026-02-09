@@ -19,7 +19,7 @@ if os.getenv("DEBUG") is not None:
 else:
     DEBUG = ENVIRONMENT == "development"
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = ["AI-Resume-Analyzer.onrender.com"]
 
 INSTALLED_APPS = [
     "django.contrib.contenttypes",
