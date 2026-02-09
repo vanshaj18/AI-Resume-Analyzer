@@ -3,6 +3,7 @@ services:
     name: ai-resume-analyzer-web
     runtime: python
     plan: free
+    region: singapore
     rootDir: project
     buildCommand: ./build.sh
     startCommand: python -m gunicorn backend.asgi:application -k uvicorn.workers.UvicornWorker
@@ -27,6 +28,7 @@ services:
     name: ai-resume-analyzer-extraction
     runtime: python
     plan: free
+    region: singapore
     rootDir: project
     buildCommand: ./build.sh
     startCommand: celery -A backend.celery_app worker -Q extraction -n extraction@%h --loglevel=info
@@ -54,6 +56,7 @@ services:
     name: ai-resume-analyzer-analysis
     runtime: python
     plan: free
+    region: singapore
     rootDir: project
     buildCommand: ./build.sh
     startCommand: celery -A backend.celery_app worker -Q analysis -n analysis@%h --loglevel=info
@@ -80,3 +83,6 @@ services:
   - type: redis
     name: ai-resume-analyzer-redis
     plan: free
+    region: singapore
+    ipAllowList:
+      - 0.0.0.0/0
