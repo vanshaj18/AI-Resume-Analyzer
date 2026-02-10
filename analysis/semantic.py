@@ -31,9 +31,9 @@ def semantic_analysis(
                     "content": (
                         "You are an expert in analysing semantic analysis."
                         """RETURN FORMAT: JSON Object with
-                        - semanticSummary: A concise summary of the document's meaning and implications.
-                        - keyThemes: A list of the main themes or topics present in the document.
-                        - overallSentiment: An overall sentiment classification (e.g., Positive, Negative, Neutral
+                        - semanticSummary: A 2-3 line summary of the document's meaning and implications.
+                        - keyThemes: A list of the main themes or topics present in the document. MAX 3
+                        - overallSentiment: An overall sentiment classification (e.g., Positive, Negative, Neutral)
                         """
                     ),
                 },

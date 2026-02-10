@@ -9,14 +9,15 @@ from analysis.store import store_pdf
 from analysis.types import AnalysisRequest, AnalysisResponse
 from analysis.services import run_full_analysis
 from analysis.tasks import analyze_resume_task, extract_text_task, reporting_task
-from project.backend.celery_app import celery_app
-from project.utils.logging_config import configure_logging
+from backend.celery_app import celery_app
+from utils.logging_config import configure_logging
 
 configure_logging()
 logger = logging.getLogger("backend.api")
 
 app = FastAPI(title="AI Resume Analyzer API")
 frontend_origin = os.getenv("FRONTEND_URL", "http://localhost:8000")
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[frontend_origin],
@@ -38,6 +39,8 @@ def analyze(payload: AnalysisRequest):
                 "model": payload.ai_model,
                 "temperature": payload.temperature,
                 "threshold": payload.threshold,
+                "criteria": payload.criteria,
+                "jd_prompt": payload.jd_prompt,
                 "text_length": len(payload.document_text),
             },
         )
@@ -45,6 +48,9 @@ def analyze(payload: AnalysisRequest):
             payload.document_text,
             model=payload.ai_model,
             temperature=payload.temperature,
+            threshold=payload.threshold,
+            criteria=payload.criteria,
+            jd_prompt=payload.jd_prompt,
         )
     except Exception as exc:
         logger.exception("analysis_failed")
@@ -56,8 +62,15 @@ async def analyze_async(
     ai_model: str | None = Form(default=None),
     temperature: float | None = Form(default=None),
     threshold: int | None = Form(default=None),
+    company_name: str | None = Form(default=None),
+    role: str | None = Form(default=None),
+    experience_level: int | None = Form(default=None),
+    job_description: str | None = Form(default=None),
+    jd_prompt: str | None = Form(default=None),
 ):
     filename = (file.filename or "").strip()
+    # if ai_model and ai_model not in ALLOWED_MODELS:
+    #     raise HTTPException(status_code=400, detail="Invalid model selection.")
     if not filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Only PDF files are supported.")
     
@@ -69,31 +82,57 @@ async def analyze_async(
     store_pdf(file_id, pdf_bytes)
     
     task = chain(
-        extract_text_task.s(file_id),
-        analyze_resume_task.s(ai_model=ai_model, temperature=temperature, threshold=threshold),
+        extract_text_task.s(file_id, filename),
+        analyze_resume_task.s(
+            ai_model=ai_model,
+            temperature=temperature,
+            threshold=threshold,
+            criteria={
+                "company_name": company_name,
+                "role": role,
+                "experience_level": experience_level,
+                "job_description": job_description,
+            },
+            jd_prompt=jd_prompt,
+        ),
         reporting_task.s(),
     ).apply_async()
     return {"task_id": task.id, "file_id": file_id, "filename": filename}
-
 
 @app.get("/analysis/status/{task_id}")
 def analysis_status(task_id: str):
     result = AsyncResult(task_id, app=celery_app)
 
+    # Walk the chain so progress can reflect earlier tasks (extract/analyze)
+    chain_results = []
+    current = result
+    while current is not None:
+        chain_results.append(current)
+        current = getattr(current, "parent", None)
+
+    def pick_active_result(results):
+        for state in ("FAILURE", "STARTED", "RETRY", "PENDING"):
+            for res in results:
+                if res.state == state:
+                    return res
+        return results[0] if results else result
+
+    active = pick_active_result(chain_results)
+
     payload = {
         "task_id": task_id,
-        "state": result.state,
+        "state": active.state,
         "progress": 0,
         "stage": None,
     }
 
     # --- Pending ---
-    if result.state == "PENDING":
+    if active.state == "PENDING":
         payload["progress"] = 0
 
     # --- Running / Retry ---
-    elif result.state in ("STARTED", "RETRY"):
-        meta = result.info or {}
+    elif active.state in ("STARTED", "RETRY"):
+        meta = active.info or {}
         stage = meta.get("stage")
 
         stage_progress = {
@@ -106,15 +145,15 @@ def analysis_status(task_id: str):
         payload["progress"] = stage_progress.get(stage, 10)
 
     # --- Success ---
-    elif result.state == "SUCCESS":
+    elif active.state == "SUCCESS":
         payload["stage"] = "done"
         payload["progress"] = 100
         payload["result"] = result.result
 
     # --- Failure ---
-    elif result.state == "FAILURE":
+    elif active.state == "FAILURE":
         payload["stage"] = "failed"
         payload["progress"] = 100
-        payload["error"] = str(result.result)
+        payload["error"] = str(active.result)
 
     return payload

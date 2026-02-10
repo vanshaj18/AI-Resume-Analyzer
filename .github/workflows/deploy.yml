@@ -21,12 +21,12 @@ jobs:
       - name: Django checks
         run: |
           python manage.py check
-      - name: Trigger Render Deploy Hook
-        env:
-          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
-        run: |
-          if [ -z "$RENDER_DEPLOY_HOOK" ]; then
-            echo "Missing RENDER_DEPLOY_HOOK secret"
-            exit 1
-          fi
-          curl -fsS -X POST "$RENDER_DEPLOY_HOOK"
+      # - name: Trigger Render Deploy Hook
+      #   env:
+          # RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+      #   run: |
+      #     if [ -z "$RENDER_DEPLOY_HOOK" ]; then
+      #       echo "Missing RENDER_DEPLOY_HOOK secret"
+      #       exit 1
+      #     fi
+      #     curl -fsS -X POST "$RENDER_DEPLOY_HOOK"

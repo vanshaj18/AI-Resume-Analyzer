@@ -2,9 +2,17 @@ import json
 import redis
 from typing import Any
 import os
+import dotenv
+dotenv.load_dotenv()
 
-_redis_url = os.getenv("REMOTE_REDIS_URL")
-r = redis.Redis.from_url(f"{_redis_url}/2")
+REDIS_URL = (
+    os.getenv("REDIS_URL")
+    or os.getenv("LOCAL_REDIS_URL")
+    or os.getenv("REMOTE_REDIS_URL")
+    or "redis://localhost:6379"
+)
+    
+r = redis.Redis.from_url(f"{REDIS_URL}/2")
 DEFAULT_TTL = 3600  # 1 hour
 
 def _key(file_id: str, name: str, version: int = 1) -> str:

@@ -72,19 +72,19 @@ redis-server
 
 ### 2) Start Celery workers
 ```bash
-celery -A celery_app worker --loglevel=info -Q extraction
-celery -A celery_app worker --loglevel=info -Q analysis
-celery -A celery_app worker --loglevel=info -Q reporting
+python manage.py collectstatic --noinput
+python manage.py migrate --noinput
+celery -A backend.celery_app worker --loglevel=info -Q extraction,analysis
 ```
 
 ### 3) Start FastAPI backend
 ```bash
-uvicorn backend.app:app --reload --port 8001
+uvicorn analysis.app:app --host 127.0.0.1 --port 8001
 ```
 
 ### 4) Start Django frontend
 ```bash
-python frontend/manage.py runserver 8000
+python manage.py runserver 127.0.0.1:8000
 ```
 
 ## Usage

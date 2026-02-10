@@ -6,9 +6,17 @@ import dotenv
 
 dotenv.load_dotenv()
 backend_port = os.getenv("BACKEND_PORT", "8001")
-backend_url = f'http://localhost:{backend_port}'.rstrip("/")
+backend_ip = os.getenv("BACKEND_IP", "127.0.0.1")
+backend_url = f"http://{backend_ip}:{backend_port}".rstrip("/")
 
-def run_full_analysis(document_text: str, ai_model: str | None = None, temperature: float | None = None, threshold: int | None = None):
+def run_full_analysis(
+    document_text: str,
+    ai_model: str | None = None,
+    temperature: float | None = None,
+    threshold: int | None = None,
+    criteria: dict | None = None,
+    jd_prompt: str | None = None,
+):
     url = f"{backend_url}/analysis"
 
     payload = json.dumps(
@@ -17,6 +25,8 @@ def run_full_analysis(document_text: str, ai_model: str | None = None, temperatu
             "ai_model": ai_model,
             "temperature": temperature,
             "threshold": threshold,
+            "criteria": criteria or None,
+            "jd_prompt": jd_prompt,
         }
     ).encode("utf-8")
     req = Request(url, data=payload, headers={"Content-Type": "application/json"})

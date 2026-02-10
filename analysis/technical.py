@@ -17,6 +17,8 @@ def technical_analysis(
     model = model_config.get("model", "llama-3.1-8b-instant")
     temperature = model_config.get("temperature", 0.2)
     threshold = input.get("threshold", 70)
+    # criteria = input.get("criteria") or {}
+    jd_prompt = input.get("jd_prompt")
     text = input.get("text", "")
 
     # log the model configuration being used
@@ -30,13 +32,15 @@ def technical_analysis(
                 {
                     "role": "system",
                     "content": (
-                        "You are an expert in analysing technical details from text and CV."
-                        """RETURN FORMAT: JSON Object with
-                        - technicalSummary: A concise summary of the document's technical details.
-                        - skillMatch: A list of the skills mentioned in the document.
-                        - experienceLevel: An overall true experience level classification (Junior, Mid, Senior)
-                        - overallScore: A score representing the overall technical fit.
-                        """
+                        "You are an EXPERT in analysing technical details from text."
+
+                        """RETURN FORMAT: JSON
+                        - technicalSummary: A 2 line summary technical details.
+                        - skillMatch: MAX 3 of the skills mentioned in the document with .
+                        - experienceLevel: An overall true experience level classification (Junior, Mid, Senior, Manager, CTO, COO).
+                        - overallScore: A score representing the overall technical fit. (0-100)"""
+                        "Evaluation Criteria (optional):\n"
+                        f"- Job Description: {jd_prompt}\n\n"
                     ),
                 },
                 {
@@ -45,7 +49,7 @@ def technical_analysis(
                         "Analyze the following text to understand its "
                         "technical details, identify mentioned skills, determine overall experience level"
                         "and calculate the overall technical score.\n\n"
-                        f"Document Text:\n{input['text']}\n\n"
+                        f"Document Text:\n{text}\n\n"
                         "Return JSON only."
                     ),
                 },

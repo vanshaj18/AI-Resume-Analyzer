@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Technical Docs | Resume Analyzer</title>
+  {% load static %}
+  <link rel="stylesheet" href="{% static 'ui/styles.css' %}" />
+</head>
+<body>
+  <div class="shell">
+    <header class="header">
+      <div>
+        <div class="eyebrow">Technical Documentation</div>
+        <h1>System Overview</h1>
+        <p class="sub">Architecture, endpoints, and operational notes.</p>
+      </div>
+      <a class="btn ghost" href="/" data-loading-text="Returning...">
+        <span class="btn-label">Back to Analyzer</span>
+        <span class="btn-spinner" aria-hidden="true"></span>
+      </a>
+    </header>
+
+    <section class="card docs-grid">
+      <div class="docs-main stack">
+        <h3>What the Project Is</h3>
+        <p class="text-muted">
+          AI Resume Analyzer is a multi-signal evaluation system for candidate documents.
+          It combines semantic understanding, technical depth checks, and psychometric heuristics
+          to generate a concise summary and score for each resume or profile.
+        </p>
+
+        <h3>How It Works (Architecture Flow)</h3>
+        <div class="flow">
+          <div class="flow-step">UI (Django)</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step">API (FastAPI)</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step">Celery</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step">Redis</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step">Results + Analytics</div>
+        </div>
+        <p class="text-muted">
+          For async runs, the request is enqueued to Celery and executed as a three-step chain:
+          extract text → analyze → report. Each stage updates progress for live UI tracking.
+        </p>
+
+        <h3>APIs</h3>
+        <p class="text-muted">
+          <strong>POST</strong> <code>/analysis</code> — single analysis (JSON payload).<br />
+          <strong>POST</strong> <code>/analysis/async</code> — async pipeline (multipart PDF).<br />
+          <strong>GET</strong> <code>/analysis/status/{task_id}</code> — progress updates.
+        </p>
+
+        <h3>Technical Services</h3>
+        <p class="text-muted">
+          <strong>Session Storage</strong> — UI results cached in Django sessions for fast refreshes.<br />
+          <strong>Redis</strong> — stores PDFs, extracted text, and intermediate analysis results for async runs; also broker/backend for Celery.<br />
+          <strong>Celery</strong> — background workers handle long-running pipelines; concurrency controlled via <code>CELERY_CONCURRENCY</code>.
+        </p>
+
+        <h3>LLM Providers</h3>
+        <p class="text-muted">
+          <strong>Groq</strong> — fast inference for short-form analysis and rapid feedback loops.<br />
+          <strong>Gemini</strong> — strong reasoning and summarization; used for complex interpretation when enabled.
+        </p>
+
+        <h3>Analysis Modules</h3>
+        <p class="text-muted">
+          <strong>Semantic</strong> — role fit, relevance, and intent alignment across experience and keywords.<br />
+          <strong>Technical</strong> — skills depth, stack maturity, project complexity, and implementation signals.<br />
+          <strong>Psychometric</strong> — communication clarity, leadership signals, consistency, and polish.
+        </p>
+      </div>
+
+      <aside class="docs-aside">
+        <div class="radar-sticky">
+          <h3>Flexibility Radar</h3>
+          <p class="text-muted">Template showing how analysis dimensions can be tuned per role.</p>
+          <div class="radar-card">
+            <svg class="radar-chart" viewBox="0 0 240 240" role="img" aria-label="Radar chart template">
+              <defs>
+                <linearGradient id="radarFill" x1="0" x2="1" y1="0" y2="1">
+                  <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.35" />
+                  <stop offset="100%" stop-color="var(--accent-2)" stop-opacity="0.15" />
+                </linearGradient>
+              </defs>
+              <g transform="translate(120 120)">
+                <polygon class="radar-grid" points="0,-90 78,-45 78,45 0,90 -78,45 -78,-45"></polygon>
+                <polygon class="radar-grid" points="0,-60 52,-30 52,30 0,60 -52,30 -52,-30"></polygon>
+                <polygon class="radar-grid" points="0,-30 26,-15 26,15 0,30 -26,15 -26,-15"></polygon>
+                <line class="radar-axis" x1="0" y1="-95" x2="0" y2="95"></line>
+                <line class="radar-axis" x1="82" y1="-48" x2="-82" y2="48"></line>
+                <line class="radar-axis" x1="82" y1="48" x2="-82" y2="-48"></line>
+                <polygon class="radar-shape" points="0,-70 62,-30 48,42 0,65 -56,30 -48,-25"></polygon>
+              </g>
+              <g class="radar-labels">
+                <text x="120" y="18" text-anchor="middle">Semantic</text>
+                <text x="210" y="70" text-anchor="start">Technical</text>
+                <text x="210" y="172" text-anchor="start">Depth</text>
+                <text x="120" y="228" text-anchor="middle">Psychometric</text>
+                <text x="30" y="172" text-anchor="end">Experience</text>
+                <text x="30" y="70" text-anchor="end">Culture Fit</text>
+              </g>
+            </svg>
+            <div class="radar-legend">
+              <span class="pill">Template</span>
+              <span class="text-muted">Adjust weights per role to emphasize different dimensions.</span>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </section>
+  </div>
+
+  <footer class="waterfall-footer">
+    <div class="waterfall-waves">
+      <svg class="waves" xmlns="http://www.w3.org/2000/svg" viewBox="0 24 150 28" preserveAspectRatio="none" shape-rendering="auto">
+        <defs>
+          <path id="gentle-wave" d="M-160 44c30 0 58-18 88-18s 58 18 88 18 58-18 88-18 58 18 88 18 v44h-352z" />
+        </defs>
+        <g class="parallax">
+          <use xlink:href="#gentle-wave" x="48" y="0" />
+          <use xlink:href="#gentle-wave" x="48" y="3" />
+          <use xlink:href="#gentle-wave" x="48" y="5" />
+          <use xlink:href="#gentle-wave" x="48" y="7" />
+        </g>
+      </svg>
+    </div>
+    
+    <div class="footer-content">
+      <div class="footer-info">
+        <p>&copy; 2026 AI Resume Analyzer • Technical Documentation</p>
+        <div class="footer-links">
+          <a href="#">Privacy Policy</a>
+          <a href="/technical-docs/">Technical Docs</a>
+          <a href="#">Support</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    const linkButtons = document.querySelectorAll('a.btn[data-loading-text]');
+    linkButtons.forEach((link) => {
+      link.addEventListener('click', () => {
+        link.classList.add('is-loading');
+        link.setAttribute('aria-busy', 'true');
+        const label = link.querySelector('.btn-label');
+        const loadingText = link.getAttribute('data-loading-text');
+        if (label && loadingText) {
+          label.textContent = loadingText;
+        }
+      });
+    });
+  </script>
+</body>
+</html>

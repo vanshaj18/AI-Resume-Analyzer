@@ -1,3 +1,4 @@
+import os
 import sys
 from pathlib import Path
 from celery import Celery
@@ -21,6 +22,7 @@ celery_app.conf.update(
     result_serializer="json",
     accept_content=["json"],
     worker_prefetch_multiplier=1,
+    worker_concurrency=int(os.getenv("CELERY_CONCURRENCY", "2")),
     task_acks_late=True,
     # --- Time handling ---
     enable_utc=True,

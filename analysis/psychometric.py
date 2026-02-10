@@ -29,9 +29,9 @@ def psychometric_analysis(
                     "content": (
                         "You are an expert in psychometric analysis evaluation by reading text and CV. "
                         """Return FORMAT: JSON object with
-                        - psychologicalTraits: A detailed analysis of the individual's psychological traits based on the provided text.
-                        - risks: An assessment of potential risks or concerns that may arise from the individual's psychological profile.
-                        - trends: An identification of any notable trends or patterns in the individual's psychological traits that may
+                        - psychologicalTraits: Analysis of the individual's psychological traits based on the provided text. MAX 3.
+                        - risks: potential risks or concerns from the individual's psychological profile. MAX 3
+                        - trends: notable trends or patterns in the individual's psychological traits. MAX 3
                         """
                     ),
                 },

@@ -19,7 +19,7 @@ if os.getenv("DEBUG") is not None:
 else:
     DEBUG = ENVIRONMENT == "development"
 
-ALLOWED_HOSTS = ["AI-Resume-Analyzer.onrender.com"]
+ALLOWED_HOSTS = ["127.0.0.0", "127.0.0.1", "localhost:8001", "AI-Resume-Analyzer.onrender.com"]
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 

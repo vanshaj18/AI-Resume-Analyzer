@@ -25,21 +25,26 @@
       <div class="table">
         <div class="row header">
           <div>Timestamp</div>
-          <div>Source</div>
-          <div>Model</div>
-          <div>Temp</div>
+          <div>Score/PDF</div>
+          <div>Summary</div>
           <div>Threshold</div>
-          <div>Chars</div>
+          <div>Model Provider/Model Name/Temp</div>
         </div>
 
         {% for r in runs %}
           <div class="row">
             <div class="text-accent" style="font-family: monospace;">{{ r.created_at|date:"Y-m-d H:i" }}</div>
-            <div style="font-weight: 500;">{{ r.source }}</div>
-            <div class="pill" style="width: fit-content; font-size: 11px;">{{ r.ai_model }}</div>
-            <div class="text-muted">{{ r.temperature }}</div>
+            <div class="text-muted">
+              <span class="text-accent">{{ r.score|default:"-" }}</span>
+              {% if r.file_name %}
+                <span class="text-muted"> • {{ r.file_name }}</span>
+              {% endif %}
+            </div>
+            <div class="text-muted summary-cell">{{ r.summary|default:"-" }}</div>
             <div style="color: var(--accent-2);">{{ r.threshold }}%</div>
-            <div class="text-muted">{{ r.document_length }}</div>
+            <div class="text-muted">
+              {{ r.provider|default:"-" }} / {{ r.ai_model|default:"-" }} / {{ r.temperature|default:"-" }}
+            </div>
           </div>
         {% empty %}
           <div class="row empty">
@@ -70,7 +75,7 @@
         <p>&copy; 2026 AI Resume Analyzer • Neural Processing Analytics</p>
         <div class="footer-links">
           <a href="#">System Status</a>
-          <a href="#">API Documentation</a>
+          <a href="/technical-docs/">Technical Docs</a>
           <a href="#">Export Data</a>
         </div>
       </div>

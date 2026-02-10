@@ -18,7 +18,6 @@ venv/
 
 # Environment files
 .env
-.env.*
 
 # Node / frontend tooling
 node_modules/

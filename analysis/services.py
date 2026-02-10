@@ -1,24 +1,18 @@
 # backend/services.py
 from typing import Dict
 import logging
+import dotenv
 from utils.logging_config import configure_logging
 from .technical import technical_analysis
 from .semantic import semantic_analysis
 from .psychometric import psychometric_analysis
-from groq import Groq
-import os
-import dotenv
+from .setup import get_llm_client, get_default_model
 from .utils import parse_json_block
 dotenv.load_dotenv()
 
 configure_logging()
 logger = logging.getLogger("backend.analysis")
 
-client = Groq(
-    api_key=os.environ.get("GROQ_API_KEY"),
-)
-DEFAULT_MODEL = "llama-3.1-8b-instant"
-SUMMARY_MODEL = "llama-3.1-8b-instant"
 DEFAULT_TEMPERATURE = 0.2
 
 def run_full_analysis(
@@ -26,36 +20,66 @@ def run_full_analysis(
     model: str | None = None,
     temperature: float | None = None,
     threshold: int | None = None,
+    criteria: dict | None = None,
+    jd_prompt: str | None = None,
     task=None,
 ) -> Dict:
+    client, provider = get_llm_client()
+    default_model = get_default_model(provider)
     logger.debug(
         "run_full_analysis",
         extra={
-            "model": model or DEFAULT_MODEL,
+            "provider": provider,
+            "model": model or default_model,
             "temperature": temperature if temperature is not None else DEFAULT_TEMPERATURE,
             "text_length": len(text),
+            "criteria": criteria,
+            "jd_prompt": jd_prompt,
         },
     )
     
     model_config = {
         "client": client,
-        "model": model or DEFAULT_MODEL,
+        "model": model or default_model,
         "temperature": DEFAULT_TEMPERATURE if temperature is None else temperature,
     }
     logger.debug("model_config", extra=model_config)
 
     try:
         technical = technical_analysis(
-            {"text": text, "modelConfig": model_config, "threshold": threshold},
+            {
+                "text": text,
+                "modelConfig": model_config,
+                "threshold": threshold,
+                "criteria": criteria,
+                "jd_prompt": jd_prompt,
+            },
             task=task,
         )
-        semantic = semantic_analysis({"text": text, "modelConfig": model_config}, task=task)
-        psychometric = psychometric_analysis({"text": text, "modelConfig": model_config}, task=task)
-        res = _generate_full_summary(summary={
-            "technical": technical,
-            "semantic": semantic,
-            "psychometric": psychometric
-        })
+        semantic = semantic_analysis(
+            {
+                "text": text, 
+                "modelConfig": model_config
+            }, 
+            task=task
+        )
+        psychometric = psychometric_analysis(
+            {
+                "text": text, 
+                "modelConfig": model_config
+            }, 
+            task=task
+        )
+        
+        res = _generate_full_summary(
+            summary={
+                "technical": technical,
+                "semantic": semantic,
+                "psychometric": psychometric
+            }, 
+            client=client, 
+            model=model or "whisper-large-v3"
+        )
 
         if res["status"] != 200:
             logger.debug("run_full_analysis", extra={"status": res["status"]})
@@ -78,7 +102,9 @@ def run_full_analysis(
 
 
 def _generate_full_summary(
-    summary: dict
+    summary: dict,
+    client,
+    model: str,
 ) -> dict:
     logger.debug("generate_full_summary", extra={
         "semantic": summary["semantic"], 
@@ -87,22 +113,23 @@ def _generate_full_summary(
     })
     try:
         completion = client.chat.completions.create(
-            model=DEFAULT_MODEL,
+            model=model,
             temperature=0.5,
             messages=[
                 {
                     "role": "system",
                     "content": (
                         "You are an expert resume analyst. "
-                        "Return ONLY a JSON object with keys: "
-                        "`summary` (3-4 lines max) and `score` (integer 0-100)."
+                        """ Return JSON object with keys:
+                        - summary: 3-4 line combined summary with technical semantic psychometric
+                        - score: (0-100)
+                        """
                     ),
                 },
                 {
                     "role": "user",
                     "content": (
-                        "Generate a concise overall summary (3-4 lines) and an overall score 0-100 "
-                        "based on the following analysis outputs. Return JSON only.\n\n"
+                        "Generate a concise overall summary on the following.\n\n"
                         f"Semantic: {summary.get('semantic')}\n\n"
                         f"Technical: {summary.get('technical')}\n\n"
                         f"Psychometric: {summary.get('psychometric')}\n"
@@ -110,12 +137,12 @@ def _generate_full_summary(
                 },
             ],
         )
-
         content = completion.choices[0].message.content or "{}"
         parsed = parse_json_block(content) or {}
         summary_text = parsed.get("summary")
         score = parsed.get("score")
 
+        print(summary, score)
         if summary_text is None or score is None:
             raise ValueError("Invalid summary response from model.")
 

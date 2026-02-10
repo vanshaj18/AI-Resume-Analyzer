@@ -16,11 +16,6 @@
         <p class="sub">Advanced Semantic, Technical, and Psychometric profiling.</p>
       </div>
       <div class="header-actions">
-        <!-- <button class="icon-btn" type="button" aria-label="Settings">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M12 8.8a3.2 3.2 0 1 0 0 6.4 3.2 3.2 0 0 0 0-6.4Zm9.2 3.2c0-.5 0-1-.1-1.4l2-1.6-2-3.5-2.5 1a8.6 8.6 0 0 0-2.4-1.4L14 1h-4l-.2 3.3a8.6 8.6 0 0 0-2.4 1.4l-2.5-1-2 3.5 2 1.6c-.1.5-.1.9-.1 1.4s0 1 .1 1.4l-2 1.6 2 3.5 2.5-1a8.6 8.6 0 0 0 2.4 1.4L10 23h4l.2-3.3a8.6 8.6 0 0 0 2.4-1.4l2.5 1 2-3.5-2-1.6c.1-.5.1-.9.1-1.4Z"/>
-          </svg>
-        </button> -->
         <a class="btn ghost" href="/analytics/" data-loading-text="Loading...">
           <span class="btn-label">View Analytics</span>
         </a>
@@ -33,22 +28,67 @@
       </div>
     {% endif %}
 
-    <!-- <div class="mode-toggle">
-      <button type="button" class="mode-btn active" onclick="switchMode('single')">Single Analysis</button>
-      <button type="button" class="mode-btn" onclick="switchMode('batch')">Batch Process</button>
-    </div> -->
-
     <form class="grid-layout" method="post" enctype="multipart/form-data">
       {% csrf_token %}
       
       <aside class="side-col">
         <section class="card settings-card">
           <div class="card-header">
-            <h2>Global AI Settings</h2>
-            <p class="sub">Configurations apply to all runs</p>
+            <h2>Job Context</h2>
+            <p class="sub">Optional guidance for shortlisting decisions.</p>
           </div>
           
           <div class="stack">
+
+            <label class="field">
+              <span>Company Name</span>
+              {{ form.company_name }}
+            </label>
+
+            <label class="field">
+              <span>Role</span>
+              {{ form.role }}
+            </label>
+
+            <label class="field">
+              <span>Experience Level (Years)</span>
+              <div class="range-container">
+                {{ form.experience_level }}
+                <output id="experienceValue">3</output>
+              </div>
+            </label>
+
+            <label class="field">
+              <span>Job Description</span>
+              {{ form.job_description }}
+            </label>
+
+            <label class="field">
+              <span>Skills</span>
+              {{ form.jd_prompt }}
+              <p class="hint" id="jdPromptPreview"></p>
+            </label>
+
+          </div>
+
+          <div class="settings-footer">
+            <p class="hint">Parallel processing enabled for batch uploads.</p>
+          </div>
+        </section>
+        </aside>
+
+        <main class="main-col">
+        <section class="card settings-card">
+          <div class="card-header">
+            <h2>Global AI Settings</h2>
+            <p class="sub">Configurations apply to all runs</p>
+          </div>
+          <div class="stack">
+            <label class="field">
+              <span>Model Provider</span>
+              {{ form.provider }}
+            </label>
+
             <label class="field">
               <span>Intelligence Model</span>
               {{ form.ai_model }}
@@ -66,32 +106,16 @@
                 <output id="thresholdValue">50</output>
               </div>
             </label>
-
-            <div class="divider"></div>
-
-            <div class="context-block">
-              <h3>Company Context</h3>
-              <p class="sub">Optional guidance for shortlisting decisions.</p>
-            </div>
-
-            <label class="field">
-              <span>Company Name</span>
-              <input type="text" name="company_name" placeholder="Acme Corp" />
-            </label>
-
-            <label class="field">
-              <span>Job Context</span>
-              <textarea name="job_context" rows="4" placeholder="Role, key requirements, must-have skills..."></textarea>
-            </label>
           </div>
-
-          <div class="settings-footer">
-            <p class="hint">Parallel processing enabled for batch uploads.</p>
+          <div class="actions">
+            <button class="btn" type="button" id="saveAiSettings" data-loading-text="Saving...">
+              <span class="btn-label">Save AI Settings</span>
+              <span class="btn-spinner" aria-hidden="true"></span>
+            </button>
+            <span class="hint" id="aiSettingsStatus">Not saved</span>
           </div>
         </section>
-        </aside>
 
-        <main class="main-col">
         <div class="mode-toggle">
           <button type="button" class="mode-btn active" data-mode="single">Single Analysis</button>
           <button type="button" class="mode-btn" data-mode="batch">Batch Upload</button>
@@ -106,8 +130,9 @@
             <label class="field">
               {{ form.document_text }}
             </label>
-            <button class="btn primary-btn" type="submit">
+            <button class="btn primary-btn" type="submit" data-loading-text="Running...">
               <span class="btn-label">Run Single Analysis</span>
+              <span class="btn-spinner" aria-hidden="true"></span>
             </button>
           </section>
         </div>
@@ -149,6 +174,24 @@
 
         {% if result or resume_data %}
           <section class="card results-card">
+            <div class="card-header">
+              <h2>Analysis Result</h2>
+              <p class="sub">Summary and score from the latest run</p>
+            </div>
+            {% if result %}
+              <div class="result-grid">
+                <div class="stat-card">
+                  <h3>Score</h3>
+                  <div class="stat-value">{{ result.score }}</div>
+                </div>
+                <div class="stat-card">
+                  <h3>Summary</h3>
+                  <p class="result-text">{{ result.summary }}</p>
+                </div>
+              </div>
+            {% else %}
+              <p class="result-text">No result available.</p>
+            {% endif %}
           </section>
         {% endif %}
       </main>
@@ -210,14 +253,19 @@
         <p>&copy; 2026 AI Resume Analyzer • Intelligent Talent Profiling</p>
         <div class="footer-links">
           <a href="#">Privacy Policy</a>
-          <a href="#">Technical Docs</a>
+          <a href="/technical-docs/">Technical Docs</a>
           <a href="#">Support</a>
         </div>
       </div>
     </div>
   </footer>
 
+  {{ ai_model_providers|json_script:"providerModelsData" }}
+
   <script>
+    const providerModels = JSON.parse(
+      document.getElementById("providerModelsData")?.textContent || "{}"
+    );
     document.querySelectorAll('.mode-btn').forEach(button => {
       button.addEventListener('click', function() {
         // UI state
@@ -238,14 +286,13 @@
 
     // Update threshold output
     const thresholdInput = document.querySelector('input[name="threshold"]');
-    if(thresholdInput) {
+    if (thresholdInput) {
       thresholdInput.addEventListener('input', (e) => {
         document.getElementById('thresholdValue').textContent = e.target.value;
       });
     }
 
-    // 
-    const slider = document.querySelector('input[type="range"]');
+    const slider = document.querySelector('input[name="threshold"]');
     const output = document.getElementById('thresholdValue');
     if (slider && output) {
       output.textContent = slider.value;
@@ -254,20 +301,16 @@
       });
     }
 
-    const form = document.querySelector('form.grid');
-    if (form) {
-      form.addEventListener('submit', () => {
-        const button = form.querySelector('button[type="submit"]');
-        if (!button) return;
-        button.classList.add('is-loading');
-        button.disabled = true;
-        const label = button.querySelector('.btn-label');
-        const loadingText = button.getAttribute('data-loading-text');
-        if (label && loadingText) {
-          label.textContent = loadingText;
-        }
+    const experienceSlider = document.querySelector('input[name="experience_level"]');
+    const experienceOutput = document.getElementById('experienceValue');
+    if (experienceSlider && experienceOutput) {
+      experienceOutput.textContent = experienceSlider.value;
+      experienceSlider.addEventListener('input', (e) => {
+        experienceOutput.textContent = e.target.value;
       });
     }
+
+    const form = document.querySelector('form.grid-layout');
 
     const linkButtons = document.querySelectorAll('a.btn[data-loading-text]');
     linkButtons.forEach((link) => {
@@ -289,8 +332,55 @@
     const batchClear = document.getElementById("batchClear");
     const batchProgress = document.getElementById("batchProgress");
     const batchStatus = document.getElementById("batchStatus");
+    const saveAiSettingsButton = document.getElementById("saveAiSettings");
+    const aiSettingsStatus = document.getElementById("aiSettingsStatus");
 
     const uploadState = new Map();
+    let savedAiSettings = null;
+    let settingsDirty = false;
+
+    const providerSelect = document.querySelector('select[name="provider"]');
+    const modelSelect = document.querySelector('select[name="ai_model"]');
+    const tempInputEl = document.querySelector('input[name="temperature"]');
+    const thresholdInputEl = document.querySelector('input[name="threshold"]');
+
+    const setRunEnabled = (enabled) => {
+      if (batchRun) batchRun.disabled = !enabled;
+      const submitBtn = form?.querySelector('button[type="submit"]');
+      if (submitBtn) submitBtn.disabled = !enabled;
+    };
+
+    const markSettingsDirty = () => {
+      settingsDirty = true;
+      if (aiSettingsStatus) aiSettingsStatus.textContent = "Not saved";
+      setRunEnabled(false);
+    };
+
+    const markSettingsSaved = () => {
+      settingsDirty = false;
+      if (aiSettingsStatus) aiSettingsStatus.textContent = "Saved";
+      setRunEnabled(true);
+    };
+    const renderModelOptions = (provider) => {
+      if (!modelSelect) return;
+      const models = providerModels[provider] || providerModels.groq || [];
+      modelSelect.innerHTML = "";
+      models.forEach((item) => {
+        const opt = document.createElement("option");
+        opt.value = item[0];
+        opt.textContent = item[1];
+        modelSelect.appendChild(opt);
+      });
+      modelSelect.value = models[0]?.[0] || "";
+    };
+
+    if (providerSelect) {
+      renderModelOptions(providerSelect.value || "groq");
+      providerSelect.addEventListener("change", (e) => {
+        renderModelOptions(e.target.value);
+        markSettingsDirty();
+      });
+    }
 
     const formatBytes = (bytes) => {
       if (!bytes && bytes !== 0) return "";
@@ -432,12 +522,22 @@
         const formData = new FormData();
         formData.append("file", file, file.name);
 
-        const aiModel = document.querySelector('select[name="ai_model"]')?.value || "";
-        const temperature = document.querySelector('input[name="temperature"]')?.value || "";
-        const threshold = document.querySelector('input[name="threshold"]')?.value || "";
+        const aiModel = savedAiSettings?.ai_model || "";
+        const temperature = savedAiSettings?.temperature || "";
+        const threshold = savedAiSettings?.threshold || "";
+        const companyName = document.querySelector('input[name="company_name"]')?.value || "";
+        const role = document.querySelector('select[name="role"]')?.value || "";
+        const experienceLevel = document.querySelector('input[name="experience_level"]')?.value || "";
+        const jobDescription = document.querySelector('textarea[name="job_description"]')?.value || "";
+        const jdPrompt = buildFinalPrompt();
         if (aiModel) formData.append("ai_model", aiModel);
         if (temperature) formData.append("temperature", temperature);
         if (threshold) formData.append("threshold", threshold);
+        if (companyName) formData.append("company_name", companyName);
+        if (role) formData.append("role", role);
+        if (experienceLevel !== "") formData.append("experience_level", experienceLevel);
+        if (jobDescription) formData.append("job_description", jobDescription);
+        if (jdPrompt) formData.append("jd_prompt", jdPrompt);
 
         request.upload.addEventListener("progress", (event) => {
           if (!event.lengthComputable) return;
@@ -453,6 +553,7 @@
         request.onreadystatechange = () => {
           if (request.readyState !== 4) return;
           const stateEl = row.querySelector(".status-state");
+          const summaryEl = row.querySelector(".status-summary");
           if (request.status >= 200 && request.status < 300) {
             const resp = JSON.parse(request.responseText || "{}");
             if (stateEl) stateEl.textContent = "Queued";
@@ -462,6 +563,14 @@
             }
           } else {
             if (stateEl) stateEl.textContent = "Upload failed";
+            let detail = request.responseText || "";
+            try {
+              const parsed = JSON.parse(detail);
+              detail = parsed.detail || parsed.message || detail;
+            } catch (_) {
+              // keep raw text
+            }
+            if (summaryEl) summaryEl.textContent = detail || "Upload failed.";
           }
           resolve();
         };
@@ -472,6 +581,10 @@
 
     if (batchRun) {
       batchRun.addEventListener("click", async () => {
+        if (settingsDirty) {
+          if (aiSettingsStatus) aiSettingsStatus.textContent = "Save settings first";
+          return;
+        }
         const files = collectFiles().filter((file) => file.name.toLowerCase().endsWith(".pdf"));
         if (!files.length) {
           alert("Select at least one PDF file to upload.");
@@ -506,6 +619,97 @@
     if (batchClear) {
       batchClear.addEventListener("click", () => resetBatchUI());
     }
+
+    const roleEl = document.querySelector('select[name="role"]');
+    const jobDescriptionEl = document.querySelector('textarea[name="job_description"]');
+    const jdPromptEl = document.querySelector('textarea[name="jd_prompt"]');
+    const jdPromptPreview = document.getElementById("jdPromptPreview");
+
+    const buildFinalPrompt = () => {
+      const role = roleEl?.value || "";
+      const jd = jobDescriptionEl?.value || "";
+      const userPrompt = jdPromptEl?.value || "";
+      const parts = [];
+      if (role) parts.push(`Role: ${role}`);
+      if (userPrompt) parts.push(`Skills:\n${userPrompt}`);
+      if (jd) parts.push(`Job Description:\n${jd}`);
+      return parts.join("\n\n");
+    };
+
+    const renderFinalPrompt = () => {
+      const rendered = buildFinalPrompt();
+      if (jdPromptPreview) {
+        jdPromptPreview.textContent = rendered ? `Preview:\n${rendered}` : "";
+      }
+    };
+
+    if (roleEl) roleEl.addEventListener("change", renderFinalPrompt);
+    if (jobDescriptionEl) jobDescriptionEl.addEventListener("input", renderFinalPrompt);
+    if (jdPromptEl) jdPromptEl.addEventListener("input", renderFinalPrompt);
+
+    renderFinalPrompt();
+
+    if (saveAiSettingsButton) {
+      saveAiSettingsButton.addEventListener("click", () => {
+        saveAiSettingsButton.classList.add("is-loading");
+        saveAiSettingsButton.setAttribute("aria-busy", "true");
+        const label = saveAiSettingsButton.querySelector(".btn-label");
+        const loadingText = saveAiSettingsButton.getAttribute("data-loading-text");
+        if (label && loadingText) label.textContent = loadingText;
+        const provider = document.querySelector('select[name="provider"]')?.value || "groq";
+        const aiModel = document.querySelector('select[name="ai_model"]')?.value || "";
+        const temperature = document.querySelector('input[name="temperature"]')?.value || "";
+        const threshold = document.querySelector('input[name="threshold"]')?.value || "";
+        savedAiSettings = { provider, ai_model: aiModel, temperature, threshold };
+        setTimeout(() => {
+          saveAiSettingsButton.classList.remove("is-loading");
+          saveAiSettingsButton.removeAttribute("aria-busy");
+          if (label) label.textContent = "Save AI Settings";
+          markSettingsSaved();
+        }, 400);
+      });
+    }
+
+    if (form) {
+      form.addEventListener('submit', (e) => {
+        if (settingsDirty) {
+          e.preventDefault();
+          if (aiSettingsStatus) aiSettingsStatus.textContent = "Save settings first";
+          return;
+        }
+        const button = form.querySelector('button[type="submit"]');
+        if (button) {
+          button.classList.add('is-loading');
+          button.disabled = true;
+          const label = button.querySelector('.btn-label');
+          const loadingText = button.getAttribute('data-loading-text');
+          if (label && loadingText) {
+            label.textContent = loadingText;
+          }
+        }
+        const aiModelInput = form.querySelector('select[name="ai_model"]');
+        const providerInput = form.querySelector('select[name="provider"]');
+        const temperatureInput = form.querySelector('input[name="temperature"]');
+        const thresholdInputLocal = form.querySelector('input[name="threshold"]');
+        if (providerInput) providerInput.value = savedAiSettings?.provider || "groq";
+        if (aiModelInput) aiModelInput.value = savedAiSettings?.ai_model || "";
+        if (temperatureInput) temperatureInput.value = savedAiSettings?.temperature || "";
+        if (thresholdInputLocal) thresholdInputLocal.value = savedAiSettings?.threshold || "";
+        if (jdPromptEl) jdPromptEl.value = buildFinalPrompt();
+      });
+    }
+
+    if (modelSelect) modelSelect.addEventListener("change", markSettingsDirty);
+    if (tempInputEl) tempInputEl.addEventListener("input", markSettingsDirty);
+    if (thresholdInputEl) thresholdInputEl.addEventListener("input", markSettingsDirty);
+
+    // Initialize saved settings from current UI state
+    const initProvider = providerSelect?.value || "groq";
+    const initModel = modelSelect?.value || "";
+    const initTemp = tempInputEl?.value || "";
+    const initThreshold = thresholdInputEl?.value || "";
+    savedAiSettings = { provider: initProvider, ai_model: initModel, temperature: initTemp, threshold: initThreshold };
+    markSettingsSaved();
   </script>
 </body>
 </html>

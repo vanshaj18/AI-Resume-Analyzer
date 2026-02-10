@@ -33,6 +33,8 @@ class TechnicalAnalysisInput(TypedDict, total=False):
     text: str
     modelConfig: ModelConfig
     threshold: Optional[int]
+    criteria: dict
+    jd_prompt: Optional[str]
 
 class TechnicalAnalysisOutput(TypedDict):
     technicalSummary: str
@@ -59,6 +61,8 @@ class AnalysisRequest(BaseModel):
     ai_model: str | None = None
     temperature: float | None = Field(default=None, ge=0.0, le=1.0)
     threshold: int | None = Field(default=None, ge=0, le=100)
+    criteria: dict | None = None
+    jd_prompt: str | None = None
 
 class SemanticOut(BaseModel):
     semanticSummary: str
